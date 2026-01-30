@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -9,14 +7,13 @@ public class UI_InGame : MonoBehaviour
 {
     [SerializeField] private GameObject firstSelected;
 
-    private PlayerInputSet playerInput;
-    private List<Player> playerList;
+    private PlayerInput playerInput;
+    private Player player;
     public static UI_InGame instance;
     public UI_FadeEffect fadeEffect { get; private set; } // read-only
 
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private TextMeshProUGUI fruitText;
-    [SerializeField] private TextMeshProUGUI lifePointsText;
 
     [SerializeField] private GameObject pauseUI;
     private bool isPaused;
@@ -26,78 +23,26 @@ public class UI_InGame : MonoBehaviour
         instance = this;
 
         fadeEffect = GetComponentInChildren<UI_FadeEffect>();
-        playerInput = new PlayerInputSet();
+        playerInput = new PlayerInput();
     }
 
     private void OnEnable()
     {
-        if (playerInput == null)
-            playerInput = new PlayerInputSet();
-
-        try
-        {
-            if (playerInput == null)
-            {
-                Debug.LogWarning("UI_InGame.OnEnable: playerInput is null");
-                return;
-            }
-
-            // Access UI actions safely and log what's missing
-            try
-            {
-                var uiActions = playerInput.UI;
-                var pauseAction = uiActions.Pause;
-                var navigateAction = uiActions.Navigate;
-
-                // Register callbacks only when actions are present
-                pauseAction.performed += ctx => PauseButton();
-                navigateAction.performed += ctx => UpdateSelected();
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"UI_InGame.OnEnable: failed to access UI actions: {ex.Message}");
-                return;
-            }
-
-            playerInput.Enable();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"UI_InGame.OnEnable exception: {ex} - playerInput={(playerInput==null?"null":"ok")}");
-        }
+        playerInput.Enable();
+        playerInput.UI.Pause.performed += ctx => PauseButton();
+        playerInput.UI.Navigate.performed += ctx => UpdateSelected();
     }
 
     private void OnDisable()
     {
-        if (playerInput == null)
-            return;
-
-        try
-        {
-            try
-            {
-                var uiActions = playerInput.UI;
-                var pauseAction = uiActions.Pause;
-                var navigateAction = uiActions.Navigate;
-
-                pauseAction.performed -= ctx => PauseButton();
-                navigateAction.performed -= ctx => UpdateSelected();
-            }
-            catch { }
-
-            playerInput.Disable();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning($"UI_InGame.OnDisable exception: {ex.Message}");
-        }
+        playerInput.Disable();
+        playerInput.UI.Pause.performed -= ctx => PauseButton();
+        playerInput.UI.Navigate.performed -= ctx => UpdateSelected();
     }
 
     private void Start()
     {
         fadeEffect.ScreenFade(0, 1);
-        GameObject pressJoinText = FindFirstObjectByType<UI_TextBlinkEffect>().gameObject;
-        PlayerManager.instance.objectsToDisable.Add(pressJoinText);
     }
 
     private void Update()
@@ -114,7 +59,7 @@ public class UI_InGame : MonoBehaviour
 
     public void PauseButton()
     {
-        playerList = PlayerManager.instance.GetPlayerList();
+        player = PlayerManager.instance.player;
 
         if (isPaused)
             UnpauseTheGame();
@@ -124,13 +69,8 @@ public class UI_InGame : MonoBehaviour
 
     private void PauseTheGame()
     {
-        foreach (var player in playerList)
-        {
-            player.playerInput.Disable();
-        }
-
-
         EventSystem.current.SetSelectedGameObject(firstSelected);
+        player.playerInput.Disable();
         isPaused = true;
         Time.timeScale = 0;
         pauseUI.SetActive(true);
@@ -138,11 +78,7 @@ public class UI_InGame : MonoBehaviour
 
     private void UnpauseTheGame()
     {
-        foreach (var player in playerList)
-        {
-            player.playerInput.Enable();
-        }
-
+        player.playerInput.Enable();
         isPaused = false;
         Time.timeScale = 1;
         pauseUI.SetActive(false);
@@ -155,28 +91,11 @@ public class UI_InGame : MonoBehaviour
 
     public void UpdateFruitUI(int collectedFruits, int totalFruits)
     {
-        if (fruitText != null)
-            fruitText.text = collectedFruits + "/" + totalFruits;
+        fruitText.text = collectedFruits + "/" + totalFruits;
     }
 
     public void UpdateTimerUI(float timer)
     {
-        if (timerText != null)
-            timerText.text = timer.ToString("00") + " s";
-    }
-
-    public void UpdateLifePointsUI(int lifePoints, int maxLifePoints)
-    {
-        if (lifePointsText == null)
-            return;
-
-        if (DifficultyManager.instance.difficulty == DifficultyType.Easy)
-        {
-            if (lifePointsText.transform != null && lifePointsText.transform.parent != null)
-                lifePointsText.transform.parent.gameObject.SetActive(false);
-            return;
-        }
-
-        lifePointsText.text = lifePoints + "/" + maxLifePoints;
+        timerText.text = timer.ToString("00") + " s";
     }
 }

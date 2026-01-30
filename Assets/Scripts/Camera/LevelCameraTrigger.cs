@@ -4,8 +4,6 @@ public class LevelCameraTrigger : MonoBehaviour
 {
     private LevelCamera levelCamera;
 
-    private int playersInTrigger;
-
     private void Awake()
     {
         levelCamera = GetComponentInParent<LevelCamera>();
@@ -17,13 +15,8 @@ public class LevelCameraTrigger : MonoBehaviour
 
         if (player != null)
         {
-            playersInTrigger++;
-
-            if (playersInTrigger == levelCamera.playerList.Count)
-            {
-                levelCamera.EnableCamera(true);
-                levelCamera.EnableLimits(true);
-            }
+            levelCamera.EnableCamera(true);
+            levelCamera.SetNewTarger(player.transform);
         }
     }
 
@@ -33,13 +26,7 @@ public class LevelCameraTrigger : MonoBehaviour
 
         if (player != null)
         {
-            playersInTrigger--;
-
-            if (playersInTrigger == 0)
-            {
-                levelCamera.EnableCamera(false);
-                levelCamera.EnableLimits(false);
-            }
+            levelCamera.EnableCamera(false);
         }
     }
 }

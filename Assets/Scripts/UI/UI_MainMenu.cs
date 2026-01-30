@@ -1,5 +1,4 @@
 using Unity.Cinemachine;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -33,8 +32,8 @@ public class UI_MainMenu : MonoBehaviour
     }
     private void Start()
     {
-        //if (HasLevelProgression())
-        //    continueButton.SetActive(true);
+        if (HasLevelProgression())
+            continueButton.SetActive(true);
 
         fadeEffect.ScreenFade(0, 1.5f);
     }
@@ -95,7 +94,7 @@ public class UI_MainMenu : MonoBehaviour
         int levelToLoad = PlayerPrefs.GetInt("ContinueLevelNumber", 0);
         int lastSavedSkin = PlayerPrefs.GetInt("LastUsedSkin");
 
-        //SkinManager.instance.SetSkinId(lastSavedSkin);
+        SkinManager.instance.SetSkinId(lastSavedSkin);
 
         DifficultyManager.instance.LoadDifficulty(difficultyIndex);
         SceneManager.LoadScene("Level_" + levelToLoad);
@@ -113,13 +112,5 @@ public class UI_MainMenu : MonoBehaviour
     {
         menuCharacter.MoveTo(skinSelectionPoint);
         cinemachine.Follow = skinSelectionPoint;
-    }
-
-    public void QuiteButton()
-    {
-        if (EditorApplication.isPlaying)
-            EditorApplication.isPlaying = false;
-        else
-            Application.Quit();
     }
 }

@@ -44,4 +44,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6011c6f977f2ae743939f626b5fe22bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  skinId: 03000000010000000000000000000000
+  choosenSkinId: 0

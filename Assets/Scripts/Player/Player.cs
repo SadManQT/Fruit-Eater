@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -13,7 +12,7 @@ public class Player : MonoBehaviour
     private Animator anim;
     private CapsuleCollider2D cd;
 
-    public InputActionAsset playerInput { get; private set; }
+    public PlayerInput playerInput { get; private set; }
     private Vector2 moveInput;
 
 
@@ -71,9 +70,26 @@ public class Player : MonoBehaviour
         cd = GetComponent<CapsuleCollider2D>();
         anim = GetComponentInChildren<Animator>();
 
-        playerInput = GetComponent<PlayerInput>().actions;
+        playerInput = new PlayerInput();
     }
 
+    private void OnEnable()
+    {
+        playerInput.Enable();
+
+        playerInput.Player.Jump.performed += ctx => JumpButton();
+        playerInput.Player.Movement.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+        playerInput.Player.Movement.canceled += ctx => moveInput = Vector2.zero;
+    }
+
+    private void OnDisable()
+    {
+        playerInput.Disable();
+
+        playerInput.Player.Jump.performed -= ctx => JumpButton();
+        playerInput.Player.Movement.performed -= ctx => moveInput = ctx.ReadValue<Vector2>();
+        playerInput.Player.Movement.canceled -= ctx => moveInput = Vector2.zero;
+    }
 
     private void Start()
     {
@@ -82,6 +98,7 @@ public class Player : MonoBehaviour
 
         UpdateGameDifficulty();
         RespawnFinished(false);
+        UpdateSkin();
     }
 
    
@@ -117,6 +134,7 @@ public class Player : MonoBehaviour
             if (gameManager.FruitsCollected() <= 0)
             {
                 Die();
+                gameManager.RestartLevel();
             }
             else
             {
@@ -130,6 +148,7 @@ public class Player : MonoBehaviour
         if (gameDifficulty == DifficultyType.Hard)
         {
             Die();
+            gameManager.RestartLevel();
         }
     }
 
@@ -143,14 +162,14 @@ public class Player : MonoBehaviour
             gameDifficulty = difficultyManager.difficulty;
     }
 
-    public void UpdateSkin(int skinIndex)
+    public void UpdateSkin()
     {
         SkinManager skinManager = SkinManager.instance;
 
         if (skinManager == null)
             return;
 
-        GetComponentInChildren<Animator>().runtimeAnimatorController = animators[skinIndex];
+        anim.runtimeAnimatorController = animators[skinManager.choosenSkinId];
     }
 
     private void HandleEnemyDetection()
@@ -423,41 +442,5 @@ public class Player : MonoBehaviour
         Gizmos.DrawWireSphere(enemyCheck.position, enemyCheckRadius);
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y - groundCheckDistance));
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x + (wallCheckDistance * facingDir), transform.position.y));
-    }
-
-
-    private void OnEnable()
-    {
-        playerInput.Enable();
-
-        playerInput.FindAction("Jump").performed += OnJumpPerformed;
-        playerInput.FindAction("Movement").performed += OnMovementPerformed;
-        playerInput.FindAction("Movement").canceled += OnMovementCanceled;
-    }
-
-
-    private void OnDisable()
-    {
-        playerInput.Disable();
-
-        playerInput.FindAction("Jump").performed -= OnJumpPerformed;
-        playerInput.FindAction("Movement").performed -= OnMovementPerformed;
-        playerInput.FindAction("Movement").canceled -= OnMovementCanceled;
-    }
-
-    private void OnMovementCanceled(InputAction.CallbackContext context)
-    {
-        moveInput = Vector2.zero;
-    }
-
-    private void OnMovementPerformed(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();
-    }
-
-    private void OnJumpPerformed(InputAction.CallbackContext context)
-    {
-        JumpButton();
-        AttemptBufferJump();
     }
 }

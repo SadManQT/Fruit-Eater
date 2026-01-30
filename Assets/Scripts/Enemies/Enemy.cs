@@ -1,10 +1,9 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    protected SpriteRenderer sr => GetComponent<SpriteRenderer>();
-    protected List<Player> playerList;
+    private SpriteRenderer sr => GetComponent<SpriteRenderer>();
+    protected Transform player;
     protected Animator anim;
     protected Rigidbody2D rb;
     protected Collider2D[] colliders;
@@ -54,12 +53,12 @@ public class Enemy : MonoBehaviour
         }
 
         PlayerManager.OnPlayerRespawn += UpdatePlayersReference;
-        PlayerManager.OnPlayerDeath += UpdatePlayersReference;
     }
 
     private void UpdatePlayersReference()
     {
-        playerList = PlayerManager.instance.GetPlayerList();
+        if (player == null)
+            player = PlayerManager.instance.player.transform;
     }
 
     protected virtual void Update()
@@ -75,10 +74,10 @@ public class Enemy : MonoBehaviour
 
     public virtual void Die()
     {
-        if (rb.isKinematic)
-            rb.isKinematic = false;
-
-        EnableColliders(false);
+        foreach (var collider in colliders)
+        {
+            collider.enabled = false;
+        }
 
         anim.SetTrigger("hit");
         rb.velocity = new Vector2(rb.velocity.x, deathImpactSpeed);
@@ -88,16 +87,7 @@ public class Enemy : MonoBehaviour
             deathRotationDirection = deathRotationDirection * -1;
 
         PlayerManager.OnPlayerRespawn -= UpdatePlayersReference;
-        PlayerManager.OnPlayerDeath -= UpdatePlayersReference;
         Destroy(gameObject, 10);
-    }
-
-    protected void EnableColliders(bool enable)
-    {
-        foreach (var collider in colliders)
-        {
-            collider.enabled = enable;
-        }
     }
 
     private void HandleDeathRotation()
